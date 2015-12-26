@@ -83,6 +83,12 @@ it's the one I used so I'm including it here:
 
 		https://www.sparkfun.com/products/13683
 
+This sensor requires the Arduino library (see the #include lines atop the
+uMProductionFeb8.ino file) that can be found here:
+	http://playground.arduino.cc/Code/Sensirion
+	or
+	https://github.com/lstoll/arduino-libraries/blob/master/SHT/SHT.h
+
 	If I were designing today I would instead use this temperature sensor
 		at 1/10th the cost:
 
