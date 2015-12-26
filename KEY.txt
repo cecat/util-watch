@@ -1,0 +1,5 @@
+# At ThingSpeak.com go to the API Keys tab when viewing your channel
+# and copy your "Write API key" here
+# This file is using a test channel (https://thingspeak.com/channels/74780)
+
+OAWSHIMMQ3UJNUDO

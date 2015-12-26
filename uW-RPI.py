@@ -20,20 +20,34 @@ garage = 4
 
 
 ## STUFF YOU NEED TO CONFIGURE LOCALLY #######################################
+# here I'm specifying local path (./) but
+# you will want to substitute for hard-coded filenames and fully specified
+# paths because I start the script from crontab at boottime
 
 # xbee radio
 myUSBserial = "/dev/ttyUSB0"
 myBaud      = 9600
 
-# thingspeak 
-compositeKey = "ENTER-YOUR-KEY-HERE"
-sumpKey = "ENTER-YOUR-KEY-HERE"
+# read thingspeak channel from KEY.txt file
+keyfile = "./KEY.txt"
+with open (keyfile, "r") as f:
+	ThingSpeakKey = f.readline().rstrip()
+											# ignore comments and empty lines
+	hashmark = "#"
+	while (hashmark == "#"):
+		if len(ThingSpeakKey) == 0:
+			ThingSpeakKey = "#"
+		hashmark = ThingSpeakKey[0]
+		if hashmark == "#":
+			ThingSpeakKey = f.readline().rstrip()
+	print "sending to ThingSpeak with API ->", ThingSpeakKey
 
 #shell script to get outside temperature NOAA weather station
-homenoaaScript = "/home/pi/python-sensors/homenoaa.sh"
-homenoaaTemp = 0
-lasthomeNoaa = 0
-hnFileName = "/home/pi/python-sensors/outsideTemp.log"
+#again use full pathnames if running from crontab
+noaaScript = "./noaa-query.sh"
+noaaTemp = 0
+lastNoaa = 0
+hnFileName = "./outsideTemp.log"
 
 ## END STUFF YOU NEED TO CONFIGURE LOCALLY #######################################
 
@@ -135,11 +149,11 @@ while 1:
 				gotSump = gotHvac = gotWater = False
 				# get outside temp from NOAA
 				noaaSuccess = True
-				lasthomeNoaa = homenoaaTemp
+				lastNoaa = noaaTemp
 				try:
-					subprocess.call([homenoaaScript])
+					subprocess.call([noaaScript])
 				except:
-					logMsg = datetime.datetime.now() + "ERROR: failed shell script execute - " + homenoaaScript
+					logMsg = datetime.datetime.now() + "ERROR: failed shell script execute - " + noaaScript
 					print logMsg
 					noaaSuccess = False
 				if (noaaSuccess):
@@ -151,11 +165,11 @@ while 1:
 						last = f.readline()
 						tpoint1 = last.find('|')
 						tpoint2 = last.find('F', tpoint1+1)
-						homenoaaTemp = last[tpoint1+1 : tpoint2-1]
+						noaaTemp = last[tpoint1+1 : tpoint2-1]
 					try:
-						outsideTemp = float(homenoaaTemp)
+						outsideTemp = float(noaaTemp)
 					except:
-						logMsg = datetime.datetime.now(), " ERROR: failed to convert homenoaaTemp"
+						logMsg = datetime.datetime.now(), " ERROR: failed to convert noaaTemp"
 						print logMsg
 						outsideTemp = 0
 				else:
@@ -163,7 +177,9 @@ while 1:
 				if (verboseMode):
 					print datetime.datetime.now(), "outside temperature ->", outsideTemp
 
-				params = urllib.urlencode({'field1': sumpSensor, 'field2': sumpState, 'field3' : hvacSensor, 'field4' : hvacState, 'field5' : waterSensor, 'field6' : waterState, 'field7' : outsideTemp, 'field8' : garageSensor, 'key':compositeKey})
+# note that the channels in ThingSpeak have individual charts, corresponsing to "field1" through "fieldn" in the call below
+
+				params = urllib.urlencode({'field1': sumpSensor, 'field2': sumpState, 'field3' : hvacSensor, 'field4' : hvacState, 'field5' : waterSensor, 'field6' : waterState, 'field7' : outsideTemp,  'key':ThingSpeakKey})
 
 	# report to ThingSpeak.com
 				try:
@@ -173,30 +189,11 @@ while 1:
 					conn.request("POST", "/update", params, headers)
 					response = conn.getresponse()
 					if response.status != 200: 
-						print response.status, response.reason
+						print "ThingSpeak !200 response ->", response.status, response.reason
 					data = response.read()
 					conn.close()
 				except:
-					print datetime.datetime.now(), " ERROR:  Failed to post Composite data to ThingSpeak.com"
-					print "        Data received from Arduino: ", xbeeData 
-
-
-	# now update the sump channel....
-
-				params = urllib.urlencode({'field1': sumpSensor, 'field2': sumpState, 'field3' : sumpRecent, 'field4' : sumpDuty, 'key': sumpKey})
-	# report sump to ThingSpeak.com
-				try:
-					headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
-						# 10/5/14 added timeout param
-					conn = httplib.HTTPConnection("api.thingspeak.com:80", timeout=30)
-					conn.request("POST", "/update", params, headers)
-					response = conn.getresponse()
-					if response.status != 200: 
-						print response.status, response.reason
-					data = response.read()
-					conn.close()
-				except:
-					print datetime.datetime.now(), " ERROR:  Failed to post Sump data to ThingSpeak.com"
+					print datetime.datetime.now(), " ERROR:  Failed to post to ThingSpeak.com"
 					print "        Data received from Arduino: ", xbeeData 
 
 
