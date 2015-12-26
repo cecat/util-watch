@@ -12,18 +12,30 @@ import sys
 import datetime
 
 #multiple channels to monitor using ThingSpeak
+#see Arduino code - these are defined there
 sump = 1
 furnace = 2
 water = 3
 garage = 4
+
+
+## STUFF YOU NEED TO CONFIGURE LOCALLY #######################################
 
 # xbee radio
 myUSBserial = "/dev/ttyUSB0"
 myBaud      = 9600
 
 # thingspeak 
-compositeKey = "XYG8HDK7ZAD0LRMZ"
-sumpKey = "GKKKCXBI6GMVQ2T3"
+compositeKey = "ENTER-YOUR-KEY-HERE"
+sumpKey = "ENTER-YOUR-KEY-HERE"
+
+#shell script to get outside temperature NOAA weather station
+homenoaaScript = "/home/pi/python-sensors/homenoaa.sh"
+homenoaaTemp = 0
+lasthomeNoaa = 0
+hnFileName = "/home/pi/python-sensors/outsideTemp.log"
+
+## END STUFF YOU NEED TO CONFIGURE LOCALLY #######################################
 
 # sump stats tracking
 sumpPtr = 0
@@ -34,11 +46,6 @@ sumpWindow = len(sumpDutyString)
 for i in range(0, sumpWindow):
 	sumpDutyString[i] = 0;
 
-#shell script to get outside temperature NOAA weather station
-homenoaaScript = "/home/pi/python-sensors/homenoaa.sh"
-homenoaaTemp = 0
-lasthomeNoaa = 0
-hnFileName = "/home/pi/python-sensors/outsideTemp.log"
 
 ## command line variables #######################################
 verboseMode = False
