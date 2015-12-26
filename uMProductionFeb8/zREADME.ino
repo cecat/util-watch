@@ -2,7 +2,7 @@
 
 Simple data logger for sending sensor data via XBEE radio in AT mode to a
 Mac with Internet access sending the data to Pachube.com via a python program.
-C. Catlett
+CeC (cecatlett@gmail.com)
 January 2012
 
 Dec 2013
