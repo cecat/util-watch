@@ -1,8 +1,12 @@
-#python server code that runs on Raspberry Pi to receive a simple comma delimited
-#string via xbee radio
 #
-# interacts with Twine via a shell script to get data from a nearby NOAA station,
-# then read the temperature from the resulting file
+# utility watch for Raspberry Pi (uW-RPI)
+# CeC (cecatlett@gmail.com)
+#
+# python server code that runs on Raspberry Pi to receive a simple comma delimited
+# string via xbee radio
+#
+# uses a shell script (noaa-query.sh) to get data from a nearby NOAA station,
+# then reads the (F) temperature from the resulting file and logs to a logfile
 # 
 import serial
 import commands
@@ -11,8 +15,8 @@ import subprocess
 import sys
 import datetime
 
-#multiple channels to monitor using ThingSpeak
-#see Arduino code - these are defined there
+# multiple channels to monitor using ThingSpeak
+# see Arduino code in uMProductionFeb8 folder - these are defined in uMProductionFeb8.ino (main tab)
 sump = 1
 furnace = 2
 water = 3
