@@ -60,8 +60,8 @@ sensor you are using.
 
 
 6. Accelerometer for motion sensing.  I used a 2-axis but I am not sure where
-to find them these days.  My code uses the Analog outputs XA and YA and
-I have these connected to pins 0 and 1 on the Fio.
+to find them these days.  My code uses the analog outputs XA and YA and
+I have these connected to pins A0 and A1 on the Fio.
 
 The code should work fine with a 3-axis such as:
 
