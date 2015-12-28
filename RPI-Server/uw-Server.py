@@ -8,6 +8,8 @@
 # uses a shell script (noaa-query.sh) to get data from a nearby NOAA station,
 # then reads the (F) temperature from the resulting file and logs to a logfile
 # 
+
+## import libraries
 import serial
 import commands
 import httplib, urllib
@@ -15,12 +17,8 @@ import subprocess
 import sys
 import datetime
 
-# multiple channels to monitor using ThingSpeak
-# see Arduino code in uMProductionFeb8 folder - these are defined in uMProductionFeb8.ino (main tab)
-sump = 1
-furnace = 2
-water = 3
-garage = 4
+# import my library
+import uwlib
 
 
 ## STUFF YOU NEED TO CONFIGURE LOCALLY #######################################
@@ -28,33 +26,27 @@ garage = 4
 # you will want to substitute for hard-coded filenames and fully specified
 # paths because I start the script from crontab at boottime
 
-# xbee radio
+# xbee radio (plugged into UBS using an Xbee Explorer breakout board
 myUSBserial = "/dev/ttyUSB0"
 myBaud      = 9600
 
 # read thingspeak channel from KEY.txt file
 keyfile = "./KEY.txt"
-with open (keyfile, "r") as f:
-	ThingSpeakKey = f.readline().rstrip()
-											# ignore comments and empty lines
-	hashmark = "#"
-	while (hashmark == "#"):
-		if len(ThingSpeakKey) == 0:
-			ThingSpeakKey = "#"
-		hashmark = ThingSpeakKey[0]
-		if hashmark == "#":
-			ThingSpeakKey = f.readline().rstrip()
-	print "sending to ThingSpeak with API ->", ThingSpeakKey
 
 #shell script to get outside temperature NOAA weather station
 #again use full pathnames if running from crontab
-noaaScript = "./noaa-query.sh"
-noaaTemp = 0
-lastNoaa = 0
-hnFileName = "./outsideTemp.log"
+# noaaScript = "./noaa-query.sh"
+noaaScript = "./NOAACheck.sh"
+hnFileName = "./scratch/outsideTemp.log"
 
 ## END STUFF YOU NEED TO CONFIGURE LOCALLY #######################################
 
+# multiple channels to monitor using ThingSpeak
+# see Arduino code in uMProductionFeb8 folder - these are defined in uMProductionFeb8.ino (main tab)
+sump = 1
+furnace = 2
+water = 3
+garage = 4
 # sump stats tracking
 sumpPtr = 0
 sumpDutyString = list('00000000')
@@ -72,6 +64,11 @@ if (len(sys.argv) > 1):		# do we have any arguments at all?
 	if sys.argv.count("-v"):
 		verboseMode = True
 	
+## get the ThingSpeak API key from keyfile #######################################
+ThingSpeakKey = uwlib.getkey(keyfile)
+if (verboseMode):
+	print "sending to ThingSpeak with API ->", ThingSpeakKey
+
 ## Connect to onboard XBee radio ###############################
 ser = serial.Serial(myUSBserial, myBaud)
 ser.flushInput()
@@ -81,10 +78,12 @@ if (verboseMode):
 else:
 	print "started"
 
+## initialize variables ##############################
 gotSump = gotHvac = gotWater = False
 sumpSensor = garageSensor = waterSensor = hvacSensor = 0
 sumpState = garageState = waterState = hvacState = 0
 sumpRecent = sumpDuty = 0
+outsideTemp = 0
 
 ## main loop ##################################################
 
@@ -94,29 +93,28 @@ while 1:
 
 	try:
 		xbeeOK = True
+		payload = []
 		xbeeData=ser.readline()
 		if xbeeOK:
 			try:
-				tempString = xbeeData.rstrip()
-				comma1 = tempString.find(',')
-				channel = tempString[:comma1]
-				comma2 = tempString.find(',',comma1+1)
-				sensorValue = tempString[comma1+1 : comma2]
-				comma3 = tempString.find(',',comma2+1)
-				state = tempString[comma2+1 : comma3]
-				recent = tempString[comma3+1 : ]
+				payload = uwlib.parser(xbeeData)
 			except:
-				print datetime.datetime.now()," ERROR:  collision (packat corrupted) or improper format."
-				print "        Data received from Arduino: ", xbeeData
+				print datetime.datetime.now(), " ERROR: problem parsing xBee data ->", xbeeData
 				xbeeOK = False
+
+	# assuming everything is ok with the data from Arduino, look at the channel and prep for reporting to ThingSpeak
 
 		if xbeeOK:
 			if (verboseMode):
-				print datetime.datetime.now(), "->", tempString
+				print datetime.datetime.now(), "->", payload
 	
 			try:
-	# SUMP
-				if int(channel) == sump:
+				channel = payload[0]
+				sensorValue = payload[1]
+				state = payload[2]
+				recent = payload[3]
+
+				if int(channel) == sump:					 # SUMP
 					gotSump = True
 					sumpSensor = sensorValue
 					sumpState = state
@@ -128,32 +126,29 @@ while 1:
 					sumpPtr = (sumpPtr+1) % sumpWindow
 					sumpDuty = 100 * float(sumpDutyString.count(1)) / float(sumpWindow)
 	
-	# HVAC
-				if int(channel) == furnace:
+				if int(channel) == furnace:					 # HVAC
 					gotHvac = True
 					hvacSensor = sensorValue
 					hvacState = state
 	
-	# WATER heater
-				if int(channel) == water:
+				if int(channel) == water:					 # WATER heater
 					gotWater = True
 					waterSensor = sensorValue
 					waterState = state
 
-	# GARAGE heater
-				if int(channel) == garage:
+				if int(channel) == garage:					 # GARAGE heater
 					garageSensor = sensorValue
 					garageState = state
 
 			except:
-				print datetime.datetime.now(), " ERROR: problem matching channel ->", tempString
+				print datetime.datetime.now(), " ERROR: problem matching channel ->", payload
 	
-	# if we have everyone...(don't wait for garage)
+	# if we have everyone...(don't wait for garage)... grab outside temp and report to ThingSpeak
+
 			if (gotSump and gotHvac and gotWater):
 				gotSump = gotHvac = gotWater = False
 				# get outside temp from NOAA
 				noaaSuccess = True
-				lastNoaa = noaaTemp
 				try:
 					subprocess.call([noaaScript])
 				except:
@@ -161,29 +156,20 @@ while 1:
 					print logMsg
 					noaaSuccess = False
 				if (noaaSuccess):
-					with open (hnFileName, "r") as f:
-						first =f.readline()
-						f.seek(-2, 2)
-						while f.read(1) != "\n":
-							f.seek(-2, 1)
-						last = f.readline()
-						tpoint1 = last.find('|')
-						tpoint2 = last.find('F', tpoint1+1)
-						noaaTemp = last[tpoint1+1 : tpoint2-1]
-					try:
-						outsideTemp = float(noaaTemp)
-					except:
-						logMsg = datetime.datetime.now(), " ERROR: failed to convert noaaTemp"
-						print logMsg
-						outsideTemp = 0
-				else:
-					outsideTemp = 0
+					NewOutsideTemp = uwlib.readNoaa(hnFileName)
+					if (NewOutsideTemp != -459.67):	 #absolute zero means something went wrong reading hnFileName
+						outsideTemp = NewOutsideTemp
+						
 				if (verboseMode):
 					print datetime.datetime.now(), "outside temperature ->", outsideTemp
 
-# note that the channels in ThingSpeak have individual charts, corresponsing to "field1" through "fieldn" in the call below
+# note that the channels in ThingSpeak have individual charts, corresponding
+# to "field1" through "fieldn" in the call below
 
-				params = urllib.urlencode({'field1': sumpSensor, 'field2': sumpState, 'field3' : hvacSensor, 'field4' : hvacState, 'field5' : waterSensor, 'field6' : waterState, 'field7' : outsideTemp,  'key':ThingSpeakKey})
+				params = urllib.urlencode({'field1' : sumpSensor,  'field2' : sumpState,
+										   'field3' : hvacSensor,  'field4' : hvacState,
+										   'field5' : waterSensor, 'field6' : waterState,
+										   'field7' : outsideTemp, 'key'    : ThingSpeakKey})
 
 	# report to ThingSpeak.com
 				try:
