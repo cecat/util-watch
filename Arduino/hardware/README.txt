@@ -2,7 +2,7 @@ The specific hardware I am using is below, with some notes on what I might do
 differently if starting from scratch.
 
 Note the sensors all have power and ground, which will be connected to the
-Arduino pins.  There is a nice labeled diagram of the FIo here:
+Arduino pins.  There is a nice labeled diagram of the Fio here:
 
 	https://learn.sparkfun.com/tutorials/pro-micro--fio-v3-hookup-guide/hardware-overview-fio-v3
 
