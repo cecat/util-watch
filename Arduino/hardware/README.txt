@@ -16,7 +16,7 @@ specifically designed for these radios.
 
 		https://www.sparkfun.com/products/10116
 
-The fio has both a USB (for power only) and battery socket, so I keep it
+The Fio has both a USB (for power only) and battery socket, so I keep it
 plugged into wall power via a standard USB power adapter and have a LiPo
 battery plugged in ffor backup in case of power outage.  Of course if
 power goes out the Raspberry Pi is dead, so for now the battery backup
