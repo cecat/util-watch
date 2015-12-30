@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # Filename: uwlib.py
 
+##### error return values #####
+ZERO_K = -459.67	# absolute zero
+
 ##### extract a ThingSpeak key from a file #####
 
 def getkey(keyfile):
@@ -44,7 +47,7 @@ def parser(xbeeData):
 
 
 ##### read temperature from end of the NOAA script log file #####
-# code from Latty@stackoverflow 2/7/12 at 23:59
+# get-to-the-last-line-in-the-file code from Latty@stackoverflow 2/7/12 at 23:59
 
 def readNoaa (noaaFile):
 
@@ -59,12 +62,39 @@ def readNoaa (noaaFile):
 	try:
 		temperature = float(tempStr)
 	except:
-		temperature = -459.67	#set to absolute zero to signal failure
+		temperature = ZERO_K	#set to absolute zero to signal failure
 
 	return temperature
 
 
+##### read temperature from end of the Twine script log file #####
+# get-to-the-last-line-in-the-file code from Latty@stackoverflow 2/7/12 at 23:59
 
+def readTwine (twineFile):
+	twineVals = [1, 1]		# empty list to use to return temp and age
+
+	last = None
+	with open (twineFile, "r") as f:
+		for line in f:
+			last = line
+	tpoint1 = last.find('|')
+	tpoint2 = last.find('|', tpoint1+1)
+	temperature = last[tpoint1+1 : tpoint2]	
+	age = last[tpoint2+1 : ]				# seconds since last updated
+
+	try:
+		if tpoint2 == (tpoint1+2):	
+			twineVals[0] = ZERO_K
+		else:
+			twineVals[0] = int(temperature)
+	except:
+		twineVals[0] = ZERO_K	#set to absolute zero to signal failure
+	try:
+		twineVals[1] = int(age)
+	except:
+		twineVals[1] = float(3601)		# more than an hour...
+
+	return twineVals
 
 version = '0.1'
 
