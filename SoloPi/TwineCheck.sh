@@ -1,9 +1,14 @@
 #!/bin/bash
 # go grab timestamp and temperature from Twine; print it to screen
-# NOTE you must replace "MyEmail@foo.org" with your Twine login email and replace "mypassword" with your Twine password
-# NOTE you must replace "Specific-Device" with your device info from Twine
+# NOTE: make sure this file is executable (chmod +x <filename>)
+
+# NOTE on first wget: you must replace "MyEmail@foo.org" with your Twine login
+#	email and replace "mypassword" with your Twine password
 
 wget --timeout=60 -o ./scratch/log.txt --quiet -O ./scratch/temp.txt --keep-session-cookies --save-cookies ./scratch/cookies.txt --no-check-certificate --post-data="email=MyEmail@foo.org&password=mypassword" https://twine.cc/login
+
+# AND on this next wget: you must replace "Specific-Device" with your
+#	device info from Twine
 
 wget --timeout=60 -o ./scratch/log.txt --quiet -O ./scratch/temp.txt --load-cookies ./scratch/cookies.txt --no-check-certificate https://twine.cc/Specific-Device/rt?cached=1
 
