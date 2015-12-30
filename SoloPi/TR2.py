@@ -2,6 +2,10 @@
 # python code to report temperature to Thingspeak.com
 # Charlie Catlett (cecatlett@gmail.com)
 # January 2014
+# 
+# This code is self-contained, and does not use the utility watch library (uwlib)
+# (and thus it is pretty ugly)
+#
 
 import datetime
 import time
