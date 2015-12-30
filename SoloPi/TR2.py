@@ -1,4 +1,5 @@
-#python code to report temperature to Thingspeak.com
+# Temperature Reporter
+# python code to report temperature to Thingspeak.com
 # Charlie Catlett (cecatlett@gmail.com)
 # January 2014
 
