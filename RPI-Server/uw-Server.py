@@ -103,11 +103,15 @@ while 1:
 				print datetime.datetime.now(), " ERROR: problem parsing xBee data ->", xbeeData
 				xbeeOK = False
 
-	# assuming everything is ok with the data from Arduino, look at the channel and prep for reporting to ThingSpeak
+	# assuming everything is ok with the data from Arduino, look at the
+	# channel and prep for reporting to ThingSpeak
 
 		if xbeeOK:
 			if (verboseMode):
-				print datetime.datetime.now(), "->", payload
+				if len(payload[0]) > 40:
+					print datetime.datetime.now(), " payload filled w/ garbage; too long to print"
+				else:
+					print datetime.datetime.now(), "->", payload
 	
 			try:
 				channel = payload[0]
@@ -142,7 +146,10 @@ while 1:
 					garageState = state
 
 			except:
-				print datetime.datetime.now(), " ERROR: problem matching channel ->", payload
+				if len(payload[0]) > 40:
+					print datetime.datetime.now(), " ERROR: no channel match.  Payload filled w/ garbage; too long to print"
+				else:
+					print datetime.datetime.now(), " ERROR: problem matching channel ->", payload
 	
 	# if we have everyone...(don't wait for garage)... grab outside temp and report to ThingSpeak
 
@@ -153,8 +160,8 @@ while 1:
 				try:
 					subprocess.call([noaaScript])
 				except:
-					logMsg = datetime.datetime.now() + "ERROR: failed shell script execute - " + noaaScript
-					print logMsg
+					logMsg = "ERROR: util-watch server shell script " + noaaScript + " failed to execute."
+					print str(datetime.datetime.now()) + logMsg
 					syslog.syslog(logMsg)
 					noaaSuccess = False
 				if (noaaSuccess):
@@ -176,21 +183,25 @@ while 1:
 	# report to ThingSpeak.com
 				try:
 					headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
-						# 10/5/14 added timeout param
 					conn = httplib.HTTPConnection("api.thingspeak.com:80", timeout=30)
 					conn.request("POST", "/update", params, headers)
 					response = conn.getresponse()
 					if response.status != 200: 
-						print "ThingSpeak !200 response ->", response.status, response.reason
+						logMsg = ("ERROR: util-watch server ThingSpeak post fail ->" +
+									response.status + response.reason)
+						print str(datetime.datetime.now()) + logMsg
+						syslog.syslog(logMsg)
 					data = response.read()
 					conn.close()
 				except:
-					logMsg = "ERROR:  Failed to post to ThingSpeak.com"
+					logMsg = "ERROR:  util-watch server failed to post to ThingSpeak.com"
 					print str(datetime.datetime.now()) + logMsg
 					syslog.syslog(logMsg)
 
 
 	except KeyboardInterrupt:
-		print "   TERMINATED from keyboard"
+		logMsg = "util-watch - TERMINATED from keyboard"
+		print str(datetime.datetime.now()) + logMsg
+		syslog.syslog(logMsg)
 		ser.close()
 		break
