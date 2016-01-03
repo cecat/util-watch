@@ -19,6 +19,7 @@ def getkey(keyfile):
 			if column1 == "#":		# empty or first char is "#"
 				key = f.readline().rstrip()
 
+	f.close()
 	return key
 
 
@@ -64,6 +65,7 @@ def readNoaa (noaaFile):
 	except:
 		temperature = ZERO_K	#set to absolute zero to signal failure
 
+	f.close()
 	return temperature
 
 
@@ -94,6 +96,7 @@ def readTwine (twineFile):
 	except:
 		twineVals[1] = float(3601)		# more than an hour...
 
+	f.close()
 	return twineVals
 
 version = '0.1'
