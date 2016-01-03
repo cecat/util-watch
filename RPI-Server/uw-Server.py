@@ -16,6 +16,7 @@ import httplib, urllib
 import subprocess
 import sys
 import datetime
+import syslog
 
 # import my library
 import uwlib
@@ -73,10 +74,10 @@ if (verboseMode):
 ser = serial.Serial(myUSBserial, myBaud)
 ser.flushInput()
 
+logMsg = "----->starting util-watch server"
+syslog.syslog(logMsg)
 if (verboseMode):
-	print "----->starting server at ", datetime.datetime.now()
-else:
-	print "started"
+	print logMsg + "at " + str(datetime.datetime.now())
 
 ## initialize variables ##############################
 gotSump = gotHvac = gotWater = False
@@ -154,6 +155,7 @@ while 1:
 				except:
 					logMsg = datetime.datetime.now() + "ERROR: failed shell script execute - " + noaaScript
 					print logMsg
+					syslog.syslog(logMsg)
 					noaaSuccess = False
 				if (noaaSuccess):
 					NewOutsideTemp = uwlib.readNoaa(hnFileName)
@@ -183,8 +185,9 @@ while 1:
 					data = response.read()
 					conn.close()
 				except:
-					print datetime.datetime.now(), " ERROR:  Failed to post to ThingSpeak.com"
-					print "        Data received from Arduino: ", xbeeData 
+					logMsg = "ERROR:  Failed to post to ThingSpeak.com"
+					print str(datetime.datetime.now()) + logMsg
+					syslog.syslog(logMsg)
 
 
 	except KeyboardInterrupt:
