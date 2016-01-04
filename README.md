@@ -1,33 +1,24 @@
-util-watch
+utility-watch
 ==========
 
 Arduino and python code to watch a furnace, sump pump, etc. using
 a Raspberry Pi with arduino/xbee gear.  Also code for monitoring 
 temperatures just with a Raspberry Pi.
 
-1.  uMProductionFeb8
-This folder contains the Arduino sketch, which includes pin
-assignments but assumes you have a working serial connection
-(in my case using a pair of XBee radios) between the Arduino
-and the Pi.  Note that this code assumes your Arduino setup
-includes the string library (see the Main.ino file) and the
-SHT1x library.
+1. Arduino
+Contains a folder with hardware details and a folder with all of the components of the Arduino sketch.
 
-2. uW-RPI.py
-This is the python code that runs on the Raspberry Pi, reads
-reports from the Arduino (via the serial connection), and
-posts to ThingSpeak.com.
+2. RPI-Server
+This is the python code that runs on the Raspberry Pi, reads messages from the Arduino (via the serial connection), checks a NOAA local weather site to get outdoor temperature, and posts to ThingSpeak.com.
 
-3. KEY.txt
-This is the config file for uW-RPI.py where you edit and
-replace the current demo key with your API write key for your
-ThingSpeak channel.
+3. PiFace
+This folder has a couple of example python programs for working with the PiFace 2.
 
-4. hardware folder
-Includes a text file that provides the specs for the particular
-Arduino I am using, including links to the parts.
+4. Hardware 
+Includes a text file that provides the specs for the particular Arduino I am using, including links to the parts.
 
-5. SoloPi folder
+5. SoloPi 
 Python code and shell scripts for monitoring temperature using a
 one-wire temperature sensor on the Pi, querying a Twine for
-inside temperature, and querying NOAA for outside temperature.
+indoor temperature, and querying NOAA for outside temperature.
+
